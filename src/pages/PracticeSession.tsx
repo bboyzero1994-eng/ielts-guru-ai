@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Square, ArrowLeft, Clock, AlertCircle } from "lucide-react";
+import { Mic, Square, ArrowLeft, Clock, AlertCircle, Play, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { getQuestionById } from "@/data/questions";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { supabase } from "@/integrations/supabase/client";
 import { addResult } from "@/lib/storage";
-import { PracticeResult, ScoreDetail, ScoreFeedback } from "@/types/ielts";
+import { PracticeResult, ScoreDetail, ScoreFeedback, TIME_LIMITS } from "@/types/ielts";
 import { toast } from "@/hooks/use-toast";
+import SpeakingTipsDrawer from "@/components/SpeakingTipsDrawer";
 
 type Phase = "prep" | "recording" | "reviewing" | "scoring" | "done";
 
@@ -19,6 +21,7 @@ const PracticeSession = () => {
   const navigate = useNavigate();
   const question = getQuestionById(questionId || "");
   const { transcript, isListening, startListening, stopListening, resetTranscript, isSupported, error } = useSpeechRecognition();
+  const { audioUrl, startRecording: startAudio, stopRecording: stopAudio, resetRecording } = useAudioRecorder();
 
   const [phase, setPhase] = useState<Phase>(question?.cueCard ? "prep" : "recording");
   const [timer, setTimer] = useState(0);
@@ -26,6 +29,7 @@ const PracticeSession = () => {
   const [isScoring, setIsScoring] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const prepTimeRef = useRef(question?.cueCard?.prepTime || 0);
+  const timeLimit = question ? TIME_LIMITS[question.part] : 60;
 
   useEffect(() => {
     if (!question) navigate("/practice");
@@ -49,11 +53,23 @@ const PracticeSession = () => {
     }
   }, [phase]);
 
-  // Recording timer
+  // Recording countdown timer
   useEffect(() => {
     if (phase === "recording") {
-      setTimer(0);
-      timerRef.current = setInterval(() => setTimer((t) => t + 1), 1000);
+      setTimer(timeLimit);
+      timerRef.current = setInterval(() => {
+        setTimer((t) => {
+          if (t <= 1) {
+            clearInterval(timerRef.current!);
+            handleStopRecording();
+            return 0;
+          }
+          if (t === 11) {
+            toast({ title: "⏰ 10 seconds left!", description: "Wrap up your answer." });
+          }
+          return t - 1;
+        });
+      }, 1000);
       return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }
   }, [phase]);
@@ -65,14 +81,16 @@ const PracticeSession = () => {
     }
   }, [transcript, phase]);
 
-  const handleStartRecording = () => {
+  const handleStartRecording = async () => {
     resetTranscript();
     startListening();
+    await startAudio();
     setPhase("recording");
   };
 
   const handleStopRecording = () => {
     stopListening();
+    stopAudio();
     if (timerRef.current) clearInterval(timerRef.current);
     setPhase("reviewing");
   };
@@ -109,9 +127,22 @@ const PracticeSession = () => {
         overallBand,
         date: new Date().toISOString(),
         xpEarned: xp,
+        audioUrl: audioUrl || undefined,
       };
 
-      addResult(result);
+      const { newAchievements } = addResult(result);
+      
+      if (newAchievements.length > 0) {
+        // Import dynamically to avoid issues
+        const { ACHIEVEMENTS } = await import("@/types/ielts");
+        for (const id of newAchievements) {
+          const a = ACHIEVEMENTS.find((ach) => ach.id === id);
+          if (a) {
+            toast({ title: `🏅 Achievement Unlocked!`, description: `${a.icon} ${a.name} — ${a.description}` });
+          }
+        }
+      }
+
       navigate(`/results/${result.id}`, { state: { result } });
     } catch (err) {
       console.error("Scoring error:", err);
@@ -124,6 +155,7 @@ const PracticeSession = () => {
   if (!question) return null;
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
+  const isLowTime = phase === "recording" && timer <= 10;
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -134,9 +166,14 @@ const PracticeSession = () => {
               <ArrowLeft className="w-6 h-6" />
             </Button>
             <h1 className="text-lg font-black text-primary-foreground">Part {question.part}</h1>
-            <div className="ml-auto flex items-center gap-2 text-primary-foreground font-bold">
-              <Clock className="w-4 h-4" />
-              {formatTime(timer)}
+            <div className="ml-auto flex items-center gap-2">
+              <SpeakingTipsDrawer part={question.part} />
+              <div className={`flex items-center gap-1.5 font-bold text-sm px-3 py-1 rounded-full ${
+                isLowTime ? "bg-destructive text-destructive-foreground animate-recording" : "text-primary-foreground"
+              }`}>
+                <Clock className="w-4 h-4" />
+                {formatTime(timer)}
+              </div>
             </div>
           </div>
         </div>
@@ -204,6 +241,14 @@ const PracticeSession = () => {
                 readOnly={phase === "recording"}
               />
 
+              {/* Audio playback */}
+              {phase === "reviewing" && audioUrl && (
+                <div className="flex items-center gap-3 bg-muted rounded-2xl p-3">
+                  <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <audio controls src={audioUrl} className="flex-1 h-8" />
+                </div>
+              )}
+
               {phase === "recording" ? (
                 <div className="flex flex-col items-center gap-3">
                   <motion.div
@@ -221,7 +266,7 @@ const PracticeSession = () => {
                 </div>
               ) : (
                 <div className="flex gap-3">
-                  <Button variant="outline" className="flex-1 rounded-2xl font-bold" onClick={() => { resetTranscript(); setEditedTranscript(""); setPhase("recording"); startListening(); }}>
+                  <Button variant="outline" className="flex-1 rounded-2xl font-bold" onClick={async () => { resetTranscript(); setEditedTranscript(""); resetRecording(); startListening(); await startAudio(); setPhase("recording"); }}>
                     <Mic className="w-4 h-4 mr-2" /> Re-record
                   </Button>
                   <Button className="flex-1 rounded-2xl font-bold bg-primary" onClick={handleSubmit} disabled={!editedTranscript.trim()}>

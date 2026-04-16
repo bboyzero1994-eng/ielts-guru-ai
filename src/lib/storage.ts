@@ -1,4 +1,4 @@
-import { UserProgress, PracticeResult, DailyStats } from "@/types/ielts";
+import { UserProgress, PracticeResult, DailyStats, ACHIEVEMENTS } from "@/types/ielts";
 
 const STORAGE_KEY = "ielts-speaking-progress";
 
@@ -9,13 +9,22 @@ const defaultProgress: UserProgress = {
   lastPracticeDate: null,
   results: [],
   dailyStats: [],
+  dailyGoal: 3,
+  unlockedAchievements: [],
 };
 
 export function getProgress(): UserProgress {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...defaultProgress };
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Migrate old data
+    return {
+      ...defaultProgress,
+      ...parsed,
+      dailyGoal: parsed.dailyGoal || 3,
+      unlockedAchievements: parsed.unlockedAchievements || [],
+    };
   } catch {
     return { ...defaultProgress };
   }
@@ -29,7 +38,18 @@ function getToday(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function addResult(result: PracticeResult): UserProgress {
+export function checkAndUnlockAchievements(progress: UserProgress): string[] {
+  const newlyUnlocked: string[] = [];
+  for (const achievement of ACHIEVEMENTS) {
+    if (!progress.unlockedAchievements.includes(achievement.id) && achievement.condition(progress)) {
+      progress.unlockedAchievements.push(achievement.id);
+      newlyUnlocked.push(achievement.id);
+    }
+  }
+  return newlyUnlocked;
+}
+
+export function addResult(result: PracticeResult): { progress: UserProgress; newAchievements: string[] } {
   const progress = getProgress();
   progress.results.unshift(result);
   progress.totalXP += result.xpEarned;
@@ -58,7 +78,6 @@ export function addResult(result: PracticeResult): UserProgress {
   todayStats.questionsAnswered += 1;
   todayStats.xpEarned += result.xpEarned;
 
-  // Recalculate average
   const todayResults = progress.results.filter((r) => r.date.startsWith(today));
   todayStats.averageBand =
     todayResults.reduce((sum, r) => sum + r.overallBand, 0) / todayResults.length;
@@ -66,12 +85,13 @@ export function addResult(result: PracticeResult): UserProgress {
   // Keep last 90 days of daily stats
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 90);
-  progress.dailyStats = progress.dailyStats.filter(
-    (d) => new Date(d.date) >= cutoff
-  );
+  progress.dailyStats = progress.dailyStats.filter((d) => new Date(d.date) >= cutoff);
+
+  // Check achievements
+  const newAchievements = checkAndUnlockAchievements(progress);
 
   saveProgress(progress);
-  return progress;
+  return { progress, newAchievements };
 }
 
 export function getTodayStats(progress: UserProgress): DailyStats {
@@ -98,4 +118,15 @@ export function getWeeklyStats(progress: UserProgress): DailyStats[] {
     );
   }
   return result;
+}
+
+export function getQuestionScore(progress: UserProgress, questionId: string): number | null {
+  const result = progress.results.find((r) => r.questionId === questionId);
+  return result ? result.overallBand : null;
+}
+
+export function setDailyGoal(goal: number) {
+  const progress = getProgress();
+  progress.dailyGoal = goal;
+  saveProgress(progress);
 }

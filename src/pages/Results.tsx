@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, RotateCcw, ArrowRight, Zap, Star } from "lucide-react";
+import { ArrowLeft, RotateCcw, ArrowRight, Zap, Star, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,6 +15,30 @@ const criteriaLabels = [
   { key: "grammaticalRange" as const, label: "Grammar Range & Accuracy", emoji: "✍️" },
   { key: "pronunciation" as const, label: "Pronunciation", emoji: "🎯" },
 ];
+
+// Highlight vocabulary (band 7+ words) in sample answer
+function highlightSampleAnswer(text: string) {
+  // Common band 7+ linking phrases and academic vocabulary markers
+  const highlights = [
+    /\b(furthermore|moreover|nevertheless|consequently|subsequently|alternatively|significantly|predominantly|essentially|fundamentally)\b/gi,
+    /\b(in terms of|as a result|on the other hand|in addition to|with regard to|by and large|to a certain extent|for the most part)\b/gi,
+    /\b(remarkable|substantial|considerable|profound|crucial|compelling|pivotal|integral|detrimental|beneficial)\b/gi,
+  ];
+  
+  let result = text;
+  highlights.forEach((regex) => {
+    result = result.replace(regex, '**$&**');
+  });
+  
+  // Render bold segments
+  const parts = result.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <span key={i} className="font-extrabold text-primary bg-primary/10 rounded px-0.5">{part.slice(2, -2)}</span>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
 
 const Results = () => {
   const location = useLocation();
@@ -84,6 +108,7 @@ const Results = () => {
         {criteriaLabels.map((c, i) => {
           const score = result.scores[c.key];
           const feedbackText = result.feedback[c.key];
+          const isPronunciation = c.key === "pronunciation";
           return (
             <motion.div key={c.key} initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 + i * 0.1 }}>
               <Card className="border border-border shadow-md">
@@ -97,6 +122,12 @@ const Results = () => {
                   </div>
                   <Progress value={(score / 9) * 100} className="h-2 mb-2 bg-muted" />
                   <p className="text-xs text-muted-foreground leading-relaxed">{feedbackText}</p>
+                  {isPronunciation && (
+                    <div className="flex items-start gap-1.5 mt-2 text-[10px] text-muted-foreground/70 italic">
+                      <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                      <span>Pronunciation score is estimated from text patterns only, not from audio analysis.</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -116,13 +147,16 @@ const Results = () => {
           </Card>
         </motion.div>
 
-        {/* Sample Answer */}
+        {/* Sample Answer with highlighted vocabulary */}
         {result.feedback.sampleAnswer && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }}>
             <Card className="border-2 border-secondary/30 shadow-md">
               <CardContent className="p-4">
-                <div className="text-xs font-bold text-secondary uppercase mb-2">💡 Sample Answer</div>
-                <p className="text-xs text-foreground leading-relaxed">{result.feedback.sampleAnswer}</p>
+                <div className="text-xs font-bold text-secondary uppercase mb-1">💡 Sample Answer</div>
+                <div className="text-[10px] font-semibold text-muted-foreground mb-2 italic">Bold words = Band 7+ vocabulary</div>
+                <p className="text-xs text-foreground leading-relaxed">
+                  {highlightSampleAnswer(result.feedback.sampleAnswer)}
+                </p>
               </CardContent>
             </Card>
           </motion.div>
@@ -134,6 +168,11 @@ const Results = () => {
             <CardContent className="p-4">
               <div className="text-xs font-bold text-muted-foreground uppercase mb-2">Your Answer</div>
               <p className="text-xs text-foreground leading-relaxed italic">"{result.transcript}"</p>
+              {result.audioUrl && (
+                <div className="mt-3">
+                  <audio controls src={result.audioUrl} className="w-full h-8" />
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

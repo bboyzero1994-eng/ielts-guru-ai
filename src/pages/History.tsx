@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Filter } from "lucide-react";
+import { Filter, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getProgress } from "@/lib/storage";
 import { IELTSPart, PracticeResult } from "@/types/ielts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 const History = () => {
   const navigate = useNavigate();
   const progress = getProgress();
   const [filterPart, setFilterPart] = useState<IELTSPart | null>(null);
+  const [showChart, setShowChart] = useState(true);
 
   const filtered = filterPart
     ? progress.results.filter((r) => r.part === filterPart)
@@ -24,15 +26,26 @@ const History = () => {
     return "bg-destructive text-destructive-foreground";
   };
 
+  // Build criteria trend data (last 20 results, reversed for chronological)
+  const trendData = [...filtered].reverse().slice(-20).map((r, i) => ({
+    idx: i + 1,
+    date: new Date(r.date).toLocaleDateString("en", { month: "short", day: "numeric" }),
+    Fluency: r.scores.fluencyCoherence,
+    Lexical: r.scores.lexicalResource,
+    Grammar: r.scores.grammaticalRange,
+    Pronunciation: r.scores.pronunciation,
+    Overall: r.overallBand,
+  }));
+
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-24">
       <div className="bg-primary px-4 pt-8 pb-6 rounded-b-[2rem]">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/20" onClick={() => navigate("/")}>
-              <ArrowLeft className="w-6 h-6" />
-            </Button>
             <h1 className="text-xl font-black text-primary-foreground">History</h1>
+            <span className="text-primary-foreground/70 text-sm font-bold ml-auto">
+              {progress.results.length} sessions
+            </span>
           </div>
         </div>
       </div>
@@ -53,6 +66,33 @@ const History = () => {
             </Button>
           ))}
         </div>
+
+        {/* Criteria Trend Chart */}
+        {trendData.length >= 2 && showChart && (
+          <Card className="border-2 border-border shadow-lg">
+            <CardContent className="p-4">
+              <h3 className="font-extrabold text-foreground mb-3 flex items-center gap-2 text-sm">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                Score Trends
+              </h3>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trendData}>
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 9]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ fontSize: 11, fontWeight: 600, borderRadius: 12 }} />
+                    <Legend iconSize={8} wrapperStyle={{ fontSize: 10, fontWeight: 700 }} />
+                    <Line type="monotone" dataKey="Fluency" stroke="hsl(145, 63%, 42%)" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="Lexical" stroke="hsl(198, 93%, 55%)" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="Grammar" stroke="hsl(38, 100%, 55%)" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="Pronunciation" stroke="hsl(270, 70%, 55%)" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="Overall" stroke="hsl(0, 0%, 40%)" strokeWidth={2.5} strokeDasharray="5 5" dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {filtered.length === 0 ? (
           <div className="text-center py-12">
