@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Flame, Zap, Target, BookOpen, TrendingUp, Shuffle, Trophy } from "lucide-react";
+import { Flame, Zap, Target, BookOpen, TrendingUp, Shuffle, Trophy, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +14,7 @@ import { questions } from "@/data/questions";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const progress = getProgress();
   const todayStats = getTodayStats(progress);
   const weeklyStats = getWeeklyStats(progress);
@@ -39,9 +41,21 @@ const Index = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-black text-primary-foreground">IELTS Speak</h1>
-              <p className="text-primary-foreground/80 text-sm font-semibold">Practice makes perfect! 🎯</p>
+              <p className="text-primary-foreground/80 text-sm font-semibold">
+                {user?.email ? `Hi, ${user.email.split("@")[0]} 👋` : "Practice makes perfect! 🎯"}
+              </p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOut}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              aria-label="Sign out"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
           </div>
+
 
           {/* Streak & XP row */}
           <div className="flex gap-3">
