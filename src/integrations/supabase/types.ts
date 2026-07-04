@@ -14,7 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      practice_results: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          feedback: string | null
+          fluency: number | null
+          grammar: number | null
+          id: string
+          lexical: number | null
+          overall_band: number | null
+          part: number
+          pronunciation: number | null
+          question: string
+          question_id: string
+          sample_answer: string | null
+          topic: string | null
+          transcript: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number
+          feedback?: string | null
+          fluency?: number | null
+          grammar?: number | null
+          id?: string
+          lexical?: number | null
+          overall_band?: number | null
+          part: number
+          pronunciation?: number | null
+          question: string
+          question_id: string
+          sample_answer?: string | null
+          topic?: string | null
+          transcript: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          feedback?: string | null
+          fluency?: number | null
+          grammar?: number | null
+          id?: string
+          lexical?: number | null
+          overall_band?: number | null
+          part?: number
+          pronunciation?: number | null
+          question?: string
+          question_id?: string
+          sample_answer?: string | null
+          topic?: string | null
+          transcript?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          daily_goal: number
+          display_name: string | null
+          id: string
+          target_band: number | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          daily_goal?: number
+          display_name?: string | null
+          id: string
+          target_band?: number | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          daily_goal?: number
+          display_name?: string | null
+          id?: string
+          target_band?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          achievement_ids: string[]
+          completed_question_ids: string[]
+          last_practice_date: string | null
+          level: number
+          streak: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          achievement_ids?: string[]
+          completed_question_ids?: string[]
+          last_practice_date?: string | null
+          level?: number
+          streak?: number
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          achievement_ids?: string[]
+          completed_question_ids?: string[]
+          last_practice_date?: string | null
+          level?: number
+          streak?: number
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
