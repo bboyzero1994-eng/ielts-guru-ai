@@ -131,7 +131,11 @@ const PracticeSession = () => {
         audioUrl: audioUrl || undefined,
       };
 
-      const { newAchievements } = addResult(result);
+      const { progress, newAchievements } = addResult(result);
+
+      // Fire-and-forget cloud sync
+      saveResultToCloud(result).catch(console.error);
+      saveProgressToCloud(progress).catch(console.error);
       
       if (newAchievements.length > 0) {
         // Import dynamically to avoid issues
