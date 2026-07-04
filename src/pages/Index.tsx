@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Flame, Zap, Target, BookOpen, TrendingUp, Shuffle, Trophy } from "lucide-react";
+import { Flame, Zap, Target, BookOpen, TrendingUp, Shuffle, Trophy, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
