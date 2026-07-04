@@ -10,6 +10,7 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { supabase } from "@/integrations/supabase/client";
 import { addResult } from "@/lib/storage";
+import { saveResultToCloud, saveProgressToCloud } from "@/lib/cloudSync";
 import { PracticeResult, ScoreDetail, ScoreFeedback, TIME_LIMITS } from "@/types/ielts";
 import { toast } from "@/hooks/use-toast";
 import SpeakingTipsDrawer from "@/components/SpeakingTipsDrawer";
