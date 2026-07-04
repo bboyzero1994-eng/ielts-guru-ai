@@ -33,6 +33,16 @@ export const questions: Question[] = [
   { id: "p1-28", part: 1, topic: "Birthdays", question: "How do you usually celebrate your birthday?" },
   { id: "p1-29", part: 1, topic: "Art", question: "Are you interested in art? Why or why not?" },
   { id: "p1-30", part: 1, topic: "Handwriting", question: "Do you prefer handwriting or typing?" },
+  // Food (5 total: p1-6 + 4 new)
+  { id: "p1-31", part: 1, topic: "Food", question: "What is your favorite dish and how is it prepared?" },
+  { id: "p1-32", part: 1, topic: "Food", question: "Do you prefer eating at home or eating out? Why?" },
+  { id: "p1-33", part: 1, topic: "Food", question: "Have your eating habits changed compared to when you were a child?" },
+  { id: "p1-34", part: 1, topic: "Food", question: "Is there any type of food you dislike? Why?" },
+  // Pets (5 total: p1-18 + 4 new)
+  { id: "p1-35", part: 1, topic: "Pets", question: "Are pets popular in your country?" },
+  { id: "p1-36", part: 1, topic: "Pets", question: "What kind of pet would you like to have and why?" },
+  { id: "p1-37", part: 1, topic: "Pets", question: "Do you think children should grow up with pets?" },
+  { id: "p1-38", part: 1, topic: "Pets", question: "What are the benefits of having a pet?" },
 
   // ===================== PART 2 — Cue Cards =====================
   {
