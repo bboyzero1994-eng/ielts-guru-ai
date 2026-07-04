@@ -41,9 +41,21 @@ const Index = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-black text-primary-foreground">IELTS Speak</h1>
-              <p className="text-primary-foreground/80 text-sm font-semibold">Practice makes perfect! 🎯</p>
+              <p className="text-primary-foreground/80 text-sm font-semibold">
+                {user?.email ? `Hi, ${user.email.split("@")[0]} 👋` : "Practice makes perfect! 🎯"}
+              </p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOut}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              aria-label="Sign out"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
           </div>
+
 
           {/* Streak & XP row */}
           <div className="flex gap-3">
