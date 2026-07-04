@@ -14,6 +14,7 @@ import { questions } from "@/data/questions";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const progress = getProgress();
   const todayStats = getTodayStats(progress);
   const weeklyStats = getWeeklyStats(progress);
